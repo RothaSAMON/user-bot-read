@@ -55,6 +55,20 @@ class TgEventHandler extends SimpleEventHandler
     $text = $message->message;
     $chatId = $message->chatId;
     $senderId = $message->senderId;
+
+    $allowedGroups = $this->envArray('TG_TARGET_GROUP_IDS');
+    $allowedBots = $this->envArray('TG_TARGET_BOT_IDS');
+    $senderId = $message->senderId;
+
+    // Group check
+    if (!in_array((string) $message->chatId, $allowedGroups, true)) {
+        return;
+    }
+    // Check Bot but not target
+    if (!in_array((string) $senderId, $allowedBots, true)) {
+        return;
+    }
+
     logger('new msg :', [$message]);
     $this->logger("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     $this->logger("New Message Received!");
@@ -63,13 +77,24 @@ class TgEventHandler extends SimpleEventHandler
     $this->logger("  Message: {$text}");
     $this->logger("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-    // Add your deposit transaction parsing logic here
-    // Example:
-    // if (preg_match('/deposit|transfer|ដាក់ប្រាក់/i', $text)) {
-    //     $this->parseDepositTransaction($text, $senderId, $chatId);
-    // }
-
-    // Optional: Reply to the message
-    // $message->reply("Got your message: {$text}");
+    // ===================
+    // Test case: when our server throw error, if telegram retries or not. NOTE: telegram webhook is keep retries until status:200
+    // Check startAndLoop compare with setEventHandler
+    
+    // Check is server down: when One User join many groups and send many messages
+    // ===================
   }
+
+  /**
+   * Parse env string to array
+   * @param string $key
+   * @return string[]
+   */
+  private function envArray(string $key): array
+  {
+    return array_filter(
+      array_map('trim', explode(',', (string) getenv($key)))
+    );
+  }
+
 }
